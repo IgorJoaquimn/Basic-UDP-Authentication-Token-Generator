@@ -6,9 +6,12 @@ shift 2
 command="itr 2021032218 4"
 
 # Run the Python script with the provided arguments
-python first.py $host $port $command
+python client.py $host $port $command
 
+
+
+host="slardar.snes.2advanced.dev"
 command="itr 2021032219 4"
 
 # Run the Python script with the provided arguments
-python first.py $host $port $command
+python client.py $host $port $command

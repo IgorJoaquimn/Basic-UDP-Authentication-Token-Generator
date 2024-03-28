@@ -21,20 +21,17 @@ class RequestError(Exception):
 class messager:
     def __init__(self, program_type):
         self.program_type = program_type
+        methods = {
+            "itv": (self.itv_request, self.itv_response),
+            "itr": (self.itr_request, self.itr_response),
+            "gtr": (self.gtr_request, self.gtr_response),
+            "gtv": (self.gtv_request, self.gtv_response)
+        }
 
-        if program_type == "itv":
-            self.request = self.itv_request
-            self.response = self.itv_response
-        elif program_type == "itr":
-            self.request = self.itr_request
-            self.response = self.itr_response
-        elif program_type == "gtr":
-            self.request = self.gtr_request
-            self.response = self.gtr_response
-        elif program_type == "gtv":
-            self.request = self.gtv_request
-            self.response = self.gtv_response
-        else:
+        # Retrieve the request and response methods based on the program type
+        try:
+            self.request, self.response = methods[program_type]
+        except KeyError:
             raise ValueError("Invalid program_type")
         
 
@@ -74,7 +71,14 @@ class messager:
     def itr_response(self, response):
         packet_format = ">2s 12s I 64s"
         values = struct.unpack(packet_format, response)
-        return values
+
+        ID, nonce, token = values[1:]
+        ID = ID.decode("ascii")
+        nonce = nonce
+        token = token.decode("ascii")
+
+        response = f"{ID}:{nonce}:{token}"
+        return response
 
     def itv_request(self, params):
         ID,nonce,token = self.parse_sas(params[0])
@@ -94,7 +98,8 @@ class messager:
     def itv_response(self,response):
         packet_format = ">2s 12s I 64s 1s"
         values = struct.unpack(packet_format, response)
-        return values
+        status = int(values[-1].decode() ==  b'\x01')
+        return status
 
     def gtr_request(self, params):
         type_i = 5
@@ -120,9 +125,11 @@ class messager:
 
     def gtr_response(self,response):
         packet_format = self.packet_format + "64s"
-        print(packet_format)
         values = struct.unpack(packet_format, response)
-        return values
+        blocks = [values[i:i+3] for i in range(2, len(values)-2, 3)]
+        sas = "+".join(f"{ID.decode('ascii')}:{nonce}:{token.decode('ascii')}" for (ID,nonce,token) in blocks)
+        token = values[-1].decode('ascii')
+        return sas + "+" + token
 
     def gtv_request(self, params):
         type_i = 7
@@ -149,4 +156,5 @@ class messager:
     def gtv_response(self,response):
         packet_format = self.packet_format + "1s"
         values = struct.unpack(packet_format, response)
-        return values
+        status = int(values[-1].decode() ==  b'\x01')
+        return status

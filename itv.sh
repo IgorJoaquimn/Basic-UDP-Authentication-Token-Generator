@@ -6,4 +6,4 @@ shift 2
 command="itv 2021032218:4:461a7e4131a7658a6a2942780af9777d2f7914e2367e3afca8b71b0c9ac7a140"
 
 # Run the Python script with the provided arguments
-python first.py $host $port $command
+python client.py $host $port $command
